@@ -1,0 +1,76 @@
+<html>
+    <title>Firebase Messaging Demo</title>
+    <style>
+        div {
+            margin-bottom: 15px;
+        }
+    </style>
+    <body>
+        <div id="token"></div>
+        <div id="msg"></div>
+        <div id="notis"></div>
+        <div id="err"></div>
+        <!-- The core Firebase JS SDK is always required and must be listed first -->
+        <script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-app.js"></script>
+
+        <script src="https://www.gstatic.com/firebasejs/7.16.1/firebase-messaging.js"></script>
+        <script>
+            MsgElem = document.getElementById('msg');
+            TokenElem = document.getElementById('token');
+            NotisElem = document.getElementById('notis');
+            ErrElem = document.getElementById('err');
+
+            // TODO: Replace firebaseConfig you get from Firebase Console
+            const firebaseConfig = {   
+                apiKey: "YOUR_API_KEY",
+                authDomain: "YOUR_AUTH_DOMAIN",
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_STORAGE_BUCKET",
+                messagingSenderId: "YOUR_MESSAGE_SENDER_ID",
+                appId: "YOUR_APP_ID",
+                measurementId: "YOUR_MEASUREMENT_ID",
+            };
+            firebase.initializeApp(firebaseConfig);
+
+            const messaging = firebase.messaging();
+            messaging
+                .requestPermission()
+                .then(function () {
+                    MsgElem.innerHTML = 'Notification permission granted.';
+                    console.log('Notification permission granted.');
+
+                    // get the token in the form of promise
+                    return messaging.getToken();
+                })
+                .then(function (token) {
+                    TokenElem.innerHTML = 'Device token is : <br>' + token;
+                })
+                .catch(function (err) {
+                    ErrElem.innerHTML = ErrElem.innerHTML + '; ' + err;
+                    console.error('Unable to get permission to notify.', err);
+                });
+
+            const enableForegroundNotification = true;
+            messaging.onMessage(function (payload) {
+                console.log('Message received. ', payload);
+                NotisElem.innerHTML =
+                    NotisElem.innerHTML + JSON.stringify(payload);
+                
+                if (enableForegroundNotification) {
+                    const data = JSON.parse(payload.data.notification)
+                    const notificationTitle = data.title
+                    const notificationOptions = {
+                        body: data.body,
+                        icon: data.icon
+                    }
+
+                    navigator.serviceWorker
+                        .getRegistrations()
+                        .then((registration) => {
+                            new Notification(notificationTitle, notificationOptions);
+                        });
+                }
+            });
+        </script>
+    </body>
+</html>
